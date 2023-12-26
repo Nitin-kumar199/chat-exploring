@@ -9,27 +9,28 @@ export const ChatContextProvider = ({children, user})=>{
     const [userChatsError, setUserChatsError] = useState(null);
     const [potentialChats, setPotentialChats] = useState([])
     const [currentChat, setCurrentChat] = useState(null)
-    //console.log("currentchat===>",currentChat)
+    //console.log("currentchat===>",currentChat?._id)
     const [messages, setMessages] = useState(null);
     const [isMessagesLoading, setMessagesLoading] = useState(false);
     const [messagesError, setMessagesError] = useState(null);
+    console.log("messages",messages)
 
     useEffect(()=>{
         const getUsers = async ()=>{
             const respones = await getRequest(`${baseUrl}/`);
-           console.log("------>",respones)
-           console.log("****", user)
+           //console.log("------>",respones)
+           //console.log("****", user)
             if(respones.error){
                 return console.log("error fetching user", respones);
             }
             const pUser = respones.filter((u)=>{
                 let isChatCreated = false;
-                console.log("u", u)
+               // console.log("u", u)
                 if(user?._id === u._id) return false;
                 
                 if(userChats){
-                    console.log("u id",u);
-                    console.log("userChats->>", userChats)
+                    //console.log("u id",u);
+                   // console.log("userChats->>", userChats)
                     isChatCreated = userChats?.some((chat)=>{
                      return chat.members[0] === u._id || chat.members[1]._id
                     });
@@ -58,6 +59,26 @@ export const ChatContextProvider = ({children, user})=>{
         getUserChats();
     },[user]);
 
+
+    useEffect(()=>{
+        const getMessages = async () =>{
+           
+                setMessagesLoading(true);
+                setMessagesError(null);
+                const respones = await getRequest(`${baseUrl}/messages/${currentChat?._id}`);
+                //console.log('messageresponse', respones)
+                setMessagesLoading(false)
+                if(respones.error){
+                    return setMessagesError(respones)
+                }
+                setMessages(respones);
+          
+        }
+        getMessages();
+    },[currentChat]);
+
+
+
     const updateCurrentChat = useCallback((chat)=>{
         setCurrentChat(chat)
     },[])
@@ -68,7 +89,7 @@ export const ChatContextProvider = ({children, user})=>{
             firstId,
             secondId
         }));
-        console.log("XXXXX", respones)
+        //console.log("XXXXX", respones)
         if(respones.error){
             return console.log("Error creating chat", respones)
         }
@@ -81,7 +102,10 @@ export const ChatContextProvider = ({children, user})=>{
         userChatsError,
         potentialChats, 
         createChat,
-        updateCurrentChat
+        updateCurrentChat,
+        messages,
+        messagesError,
+        isMessagesLoading
     }}>
         {children}
     </ChatContext.Provider>

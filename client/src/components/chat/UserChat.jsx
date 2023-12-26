@@ -5,7 +5,7 @@ import profile from "../../assets/profile.svg"
 
 export default function UserChat({chat, user}) {
     const {recipientUser} = useFetchRecipient(chat, user);
-    console.log("recipientuser",recipientUser);
+    //console.log("recipientuser",recipientUser);
   return (
     <Stack direction='horizontal' gap={3} className='user-card align-items-center p-2 justify-content-between' role='button'>
         <div className='d-flex'>
@@ -13,7 +13,7 @@ export default function UserChat({chat, user}) {
                 <img src={profile} height="35px"/>
             </div>
             <div className='text-content'>
-                <div className='name'>{recipientUser?.name}</div>
+                <div className='name'> {recipientUser?.name} </div>
                 <div className='text'>textMessage</div>
             </div>
         </div>

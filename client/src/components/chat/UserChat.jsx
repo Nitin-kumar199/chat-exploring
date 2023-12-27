@@ -3,28 +3,64 @@ import { useFetchRecipient } from '../../hooks/useFetchRecipient'
 import { Stack } from 'react-bootstrap';
 import profile from "../../assets/profile.svg"
 import { ChatContext } from '../../context/ChatContex';
+import { unreadNotificationsFunc } from '../../utils/unreadNotifications';
+import { useFetchLatestMessage } from '../../hooks/useFetchLatestMessage';
+import moment from 'moment';
 
 export default function UserChat({chat, user}) {
     const {recipientUser} = useFetchRecipient(chat, user);
-    const {onlineUsers} = useContext(ChatContext);
-    let isOnline = onlineUsers?.some((user)=> user?.userId === recipientUser?._id)
+    const {onlineUsers, notifications, markThisUserNotificationAsRead} = useContext(ChatContext);
+    const {latestMessage} = useFetchLatestMessage(chat)
+
+    const unreadNotifications = unreadNotificationsFunc(notifications);
+
+    const thisUserNotifications = unreadNotifications?.filter(
+        n => n.senderId === recipientUser?._id
+    )
+
+
+    let isOnline = onlineUsers?.some((user)=> user?.userId === recipientUser?._id);
+    const trucateText = (text) =>{
+        let shortText = text.substring(0, 20);
+        if(text.length > 20){
+            shortText = shortText + "..."
+        }
+        return shortText;
+    }
     //console.log("recipientuser",recipientUser);
   return (
-    <Stack direction='horizontal' gap={3} className='user-card align-items-center p-2 justify-content-between' role='button'>
+    <Stack direction='horizontal' gap={3} className='user-card align-items-center p-2 justify-content-between' role='button'
+    onClick={()=>{
+        if(thisUserNotifications?.length !== 0 ){
+            markThisUserNotificationAsRead(
+                thisUserNotifications,
+                notifications
+            )
+        }
+    }}
+    >
         <div className='d-flex'>
             <div className='me-2'>
                 <img src={profile} height="35px"/>
             </div>
             <div className='text-content'>
                 <div className='name'> {recipientUser?.name} </div>
-                <div className='text'>textMessage</div>
+                <div className='text'> {
+                    latestMessage?.text && (
+                        <span>
+                            {trucateText(latestMessage?.text)}
+                        </span>
+                    )
+                } </div>
             </div>
         </div>
         <div className='d-flex flex-column align-items-end'>    
             <div className='date'>
-                23/12/2023
+                {moment(latestMessage?.createdAt).calendar()}
             </div>
-            <div className='this-user-notifications'>2</div>
+            <div className={thisUserNotifications?.length > 0 ? 'this-user-notifications' : ""}>
+                {thisUserNotifications?.length > 0 ? thisUserNotifications?.length : ''}
+            </div>
             <span className={isOnline ? 'user-online' : ""}></span>
         </div>
     </Stack>

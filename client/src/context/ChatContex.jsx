@@ -18,6 +18,9 @@ export const ChatContextProvider = ({children, user})=>{
     const [newMessage, setNewMessage] = useState(null); 
     const [socket, setSocket] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+    const [allUsers, setAllUsers] = useState()
+    console.log("notifications",notifications)
     //console.log("messages",messages)
     console.log("onlineUsers",onlineUsers)
     //initialize socket.io
@@ -46,16 +49,25 @@ export const ChatContextProvider = ({children, user})=>{
         socket.emit("sendMessage",{...newMessage, recipientId})
     },[newMessage]);
 
-    //recieve messages
+    //recieve messages and notification
     useEffect(()=>{
         if(socket === null) return;
         socket.on("getMessage", res => {
             if(currentChat?._id !== res.chatId) return;
             setMessages((prev)=> [...prev, res])
         })
+        socket.on("getNotification", (res)=>{
+            const isChatOpen = currentChat?.members.some(id => id ===res.senderId);
+            if(isChatOpen){
+                setNotifications(prev => [{...res, isRead:true}, ...prev])
+            }else{
+                setNotifications(prev => [res, ...prev])
+            }
+        })
 
         return ()=>{
-            socket.off("getMessage")
+            socket.off("getMessage");
+            socket.off("getNotification")
         }
     },[socket, currentChat]);
 
@@ -83,6 +95,7 @@ export const ChatContextProvider = ({children, user})=>{
             });
            // console.log("puser", pUser)
             setPotentialChats(pUser)
+            setAllUsers(pUser)
 
         }
         getUsers();
@@ -101,7 +114,7 @@ export const ChatContextProvider = ({children, user})=>{
             }
         }
         getUserChats();
-    },[user]);
+    },[user, notifications]);
 
 
     useEffect(()=>{
@@ -155,6 +168,50 @@ export const ChatContextProvider = ({children, user})=>{
         setMessages((prev)=> [...prev, response])
         setTextMessage("")
     }, [])
+    //markasreadnotification
+    const markAllNotificationAsRead = useCallback((notifications)=>{
+        const mNotification = notifications.map((n)=>{
+            return {...n, isRead:true}
+        });
+        setNotifications(mNotification)
+    },[])
+    //modifienotification
+    const markNotificationAsRead = useCallback((n, userChats, user, notifications)=>{
+        //find chat to open
+        const desiredChat = userChats.find(chat => {
+            const chatMembers = [user._id, n.senderId]
+            const isDesiredChat = chat?.members.every((member)=>{
+                return chatMembers.includes(member);
+            })
+            return isDesiredChat
+        })
+        //mark notification as read
+        const mNotifications = notifications.map(el =>{
+            if(n.senderId === el.senderId){
+                return {...n, isRead: true}
+            }else{
+                return el
+            }
+        })
+        updateCurrentChat(desiredChat);
+        setNotifications(mNotifications)
+    },[])
+    //mark this user notification
+    const markThisUserNotificationAsRead = useCallback((thisUserNotifications, notifications)=>{
+        //mark notification as read 
+        const mNotification = notifications.map(el =>{
+            let notification;
+            thisUserNotifications.forEach(n =>{
+                if(n.senderId === el.senderId){
+                    notification = {...n, isRead:true }
+                }else{
+                    notification = el
+                }
+            })
+            return notification
+        })
+        setNotifications(mNotification)
+    },[])
 
     return <ChatContext.Provider value={{
         userChats,
@@ -168,7 +225,12 @@ export const ChatContextProvider = ({children, user})=>{
         messagesError,
         isMessagesLoading,
         sendTextMessage,
-        onlineUsers
+        onlineUsers,
+        notifications,
+        allUsers,
+        markAllNotificationAsRead,
+        markNotificationAsRead,
+        markThisUserNotificationAsRead
     }}>
         {children}
     </ChatContext.Provider>

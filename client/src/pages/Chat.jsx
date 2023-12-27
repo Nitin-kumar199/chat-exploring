@@ -19,10 +19,10 @@ export default function Chat() {
       {userChats?.length < 1 ? null : (<Stack direction='horizontal' gap={4} className='align-items-start'>
         <Stack className='message-box flex-grow-0 pe-3' gap={3}>
           {isUserChatLoading && <p>Loading chats...</p>}
-          {userChats?.map((chats, index)=>{
+          {userChats?.map((chat, index)=>{
             return(
-              <div key={index} onClick={()=>{updateCurrentChat(chats)}}>
-                <UserChat chat= {chats} user={user} />
+              <div key={index} onClick={()=>{updateCurrentChat(chat)}}>
+                <UserChat chat= {chat} user={user} />
               </div>
             )
           })}
